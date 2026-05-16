@@ -78,11 +78,27 @@ header::before {
 .hdr { position:relative; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
 .hdr-title h1 { font-size:clamp(1.3rem,4vw,2.2rem); font-weight:900; color:white; text-shadow:2px 2px 0 rgba(0,0,0,0.2); letter-spacing:3px; }
 .hdr-title p { color:rgba(255,255,255,0.82); font-size:0.87rem; margin-top:3px; }
-.hdr-user { display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.18); border-radius:50px; padding:8px 14px; }
+.hdr-user { display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.18); border-radius:50px; padding:8px 14px; flex-wrap:wrap; justify-content:flex-end; }
 .hdr-avatar { width:34px; height:34px; border-radius:50%; background:rgba(255,255,255,0.3); display:flex; align-items:center; justify-content:center; font-size:1rem; font-weight:900; color:white; }
 .hdr-name { color:white; font-weight:700; font-size:0.92rem; }
 .logout-btn { background:rgba(255,255,255,0.25); border:none; border-radius:50px; color:white; padding:4px 12px; font-size:0.78rem; font-weight:700; cursor:pointer; font-family:'Nunito',sans-serif; transition:background 0.2s; }
 .logout-btn:hover { background:rgba(255,255,255,0.4); }
+
+/* SFX toggle */
+.sfx-btn{
+  background:rgba(255,255,255,0.25);
+  border:none;
+  border-radius:50px;
+  color:white;
+  padding:4px 12px;
+  font-size:0.78rem;
+  font-weight:700;
+  cursor:pointer;
+  font-family:'Nunito',sans-serif;
+  transition:background 0.2s, opacity 0.2s;
+}
+.sfx-btn:hover{ background:rgba(255,255,255,0.4); }
+.sfx-btn.off{ opacity:0.7; }
 
 /* TABS */
 .tabs { display:flex; gap:10px; justify-content:center; padding:18px 20px 0; flex-wrap:wrap; }
@@ -283,6 +299,10 @@ header::before {
       <div class="hdr-user">
         <div class="hdr-avatar" id="hdrAvatar">?</div>
         <span class="hdr-name" id="hdrName">學生</span>
+
+        <!-- ✅ SFX toggle -->
+        <button class="sfx-btn" id="sfxBtn" onclick="toggleSfx()">🔊音效：開</button>
+
         <button class="logout-btn" onclick="doLogout()">登出</button>
       </div>
     </div>
@@ -409,7 +429,42 @@ const LB_KEY       = 'leaderboard-v2';
 const TOTAL_Q      = 10;
 let currentUser    = null;
 
+// ============================================================
+// ✅ SFX (音效) 開關
+// ============================================================
+const SFX_KEY = 'sfx-enabled-v1';
+let sfxEnabled = true;
+
+function loadSfxSetting() {
+  try {
+    const v = localStorage.getItem(SFX_KEY);
+    if (v === '0') sfxEnabled = false;
+    else sfxEnabled = true;
+  } catch (e) { sfxEnabled = true; }
+  updateSfxButtonUI();
+}
+
+function updateSfxButtonUI() {
+  const btn = document.getElementById('sfxBtn');
+  if (!btn) return;
+  if (sfxEnabled) {
+    btn.textContent = '🔊音效：開';
+    btn.classList.remove('off');
+  } else {
+    btn.textContent = '🔇音效：關';
+    btn.classList.add('off');
+  }
+}
+
+function toggleSfx() {
+  sfxEnabled = !sfxEnabled;
+  try { localStorage.setItem(SFX_KEY, sfxEnabled ? '1' : '0'); } catch (e) {}
+  updateSfxButtonUI();
+}
+
+// ============================================================
 // Mock window.storage in case it's not provided by the context environment
+// ============================================================
 if (!window.storage) {
   window.storage = {
     get: async (key) => ({ value: localStorage.getItem(key) }),
@@ -425,13 +480,14 @@ const wrongSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2003/2
 correctSound.volume = 0.4;
 wrongSound.volume = 0.4;
 
-// ✅ NEW: safe sound play helper
+// ✅ safe sound play helper (checks toggle)
 function playSfx(audioEl) {
+  if (!sfxEnabled) return;
   try {
-    audioEl.currentTime = 0; // replay from beginning
+    audioEl.currentTime = 0;
     audioEl.play();
   } catch (e) {
-    // ignore if browser blocks autoplay
+    // ignore (browser may block autoplay)
   }
 }
 
@@ -486,13 +542,17 @@ async function doSignIn() {
   const user = document.getElementById('siUser').value.trim();
   const pass = document.getElementById('siPass').value;
   if (!user || !pass) { showErr('siErr','請填寫用戶名稱和密碼。'); return; }
+
   const btn = document.getElementById('siBtn');
   btn.textContent = '登入中…'; btn.classList.add('loading');
+
   const accs = (await storeGet(ACCOUNTS_KEY, true)) || {};
   btn.textContent = '登入 →'; btn.classList.remove('loading');
+
   const key = user.toLowerCase();
   if (!accs[key]) { showErr('siErr','找不到此用戶，請先注冊。'); return; }
   if (accs[key].hash !== simpleHash(pass)) { showErr('siErr','密碼錯誤，請重試。'); return; }
+
   currentUser = { username: accs[key].display };
   enterApp();
 }
@@ -502,19 +562,26 @@ async function doSignUp() {
   const user  = document.getElementById('suUser').value.trim();
   const pass  = document.getElementById('suPass').value;
   const pass2 = document.getElementById('suPass2').value;
+
   if (!user || user.length < 2) { showErr('suErr','用戶名稱至少需要2個字符。'); return; }
   if (pass.length < 4)           { showErr('suErr','密碼至少需要4個字符。'); return; }
   if (pass !== pass2)            { showErr('suErr','兩次密碼不一樣，請重新輸入。'); return; }
+
   const btn = document.getElementById('suBtn');
   btn.textContent = '注冊中…'; btn.classList.add('loading');
+
   const accs = (await storeGet(ACCOUNTS_KEY, true)) || {};
   btn.textContent = '注冊帳號 ✓'; btn.classList.remove('loading');
+
   const key = user.toLowerCase();
   if (accs[key]) { showErr('suErr','此用戶名稱已被使用，請換一個。'); return; }
+
   accs[key] = { hash: simpleHash(pass), display: user, createdAt: new Date().toISOString() };
   await storeSet(ACCOUNTS_KEY, accs, true);
+
   document.getElementById('suOk').textContent = `✅ 注冊成功！歡迎 ${user}，請登入。`;
   document.getElementById('suOk').classList.add('show');
+
   ['suUser','suPass','suPass2'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('pwBar').style.width = '0%';
   setTimeout(() => switchAuthTab('signin'), 1500);
@@ -523,9 +590,14 @@ async function doSignUp() {
 function enterApp() {
   document.getElementById('authScreen').style.display = 'none';
   document.getElementById('mainApp').style.display = 'block';
+
+  // load SFX setting after mainApp exists
+  loadSfxSetting();
+
   const name = currentUser.username;
   document.getElementById('hdrName').textContent = name;
   document.getElementById('hdrAvatar').textContent = [...name][0].toUpperCase();
+
   buildNumSelector(); 
   renderCards();
   buildFullTable();
@@ -536,12 +608,14 @@ function doLogout() {
   if (!confirm('確定要登出嗎？')) return;
   clearInterval(gameInterval);
   currentUser = null;
+
   document.getElementById('mainApp').style.display = 'none';
   document.getElementById('authScreen').style.display = 'flex';
   document.getElementById('siUser').value = '';
   document.getElementById('siPass').value = '';
   hideMsg('siErr');
   switchAuthTab('signin');
+
   document.getElementById('gameSetup').style.display = 'block';
   document.getElementById('gamePlay').style.display = 'none';
   document.getElementById('gameOver').classList.remove('show');
@@ -577,13 +651,20 @@ function buildNumSelector() {
   for (let i=1; i<=9; i++) {
     const btn = document.createElement('button');
     btn.className = 'num-btn' + (i===2?' active':'');
-    btn.textContent = i; btn.style.borderColor = COLORS[i-1];
+    btn.textContent = i;
+    btn.style.borderColor = COLORS[i-1];
     btn.style.color = i===2?'white':COLORS[i-1];
     btn.style.background = i===2?COLORS[i-1]:'white';
     btn.onclick = () => {
       currentNum = i;
-      document.querySelectorAll('.num-btn').forEach((b,j)=>{ b.classList.remove('active'); b.style.background='white'; b.style.color=COLORS[j]; });
-      btn.classList.add('active'); btn.style.background=COLORS[i-1]; btn.style.color='white';
+      document.querySelectorAll('.num-btn').forEach((b,j)=>{ 
+        b.classList.remove('active'); 
+        b.style.background='white'; 
+        b.style.color=COLORS[j]; 
+      });
+      btn.classList.add('active'); 
+      btn.style.background=COLORS[i-1]; 
+      btn.style.color='white';
       renderCards();
     };
     sel.appendChild(btn);
@@ -658,6 +739,7 @@ function startQuiz() {
   document.getElementById('quizSetup').style.display = 'none';
   document.getElementById('quizPlay').style.display = 'block';
   document.getElementById('quizResult').style.display = 'none';
+
   quizQuestions = [];
   quizScore = 0;
   quizIndex = 0;
@@ -723,7 +805,7 @@ function checkQuiz(selectedBtn, val) {
     dots[quizIndex].classList.add('done');
     quizScore++;
 
-    // ✅ NEW: play correct sound
+    // ✅ play correct sound (if enabled)
     playSfx(correctSound);
 
   } else {
@@ -735,17 +817,14 @@ function checkQuiz(selectedBtn, val) {
       if(parseInt(b.textContent) === q.ans) b.classList.add('correct'); 
     });
 
-    // ✅ NEW: play wrong sound
+    // ✅ play wrong sound (if enabled)
     playSfx(wrongSound);
   }
 
   quizIndex++;
   setTimeout(() => {
-    if(quizIndex < TOTAL_Q) {
-      showQuizQuestion();
-    } else {
-      showQuizEnd();
-    }
+    if(quizIndex < TOTAL_Q) showQuizQuestion();
+    else showQuizEnd();
   }, 1800);
 }
 
@@ -754,6 +833,7 @@ function showQuizEnd() {
   document.getElementById('quizResult').style.display = 'block';
 
   document.getElementById('resScore').textContent = `最終得分：${quizScore} / ${TOTAL_Q}`;
+
   const emoji = document.getElementById('resEmoji');
   const title = document.getElementById('resTitle');
   const detail = document.getElementById('resDetail');
@@ -780,6 +860,7 @@ let gameTimer = 60, gameScore = 0, gameStreak = 0, gameInterval = null, gameCurr
 function startGame() {
   document.getElementById('gameSetup').style.display = 'none';
   document.getElementById('gamePlay').style.display = 'block';
+
   gameTimer = 60; gameScore = 0; gameStreak = 0;
   document.getElementById('gameTimer').textContent = gameTimer;
   document.getElementById('gameScore').textContent = gameScore;
@@ -817,14 +898,14 @@ function checkGame() {
 
   if(userAns === gameCurrentQ.ans) {
     gameStreak++;
-    // Normal score 10 + Streak dynamic bonuses
     const bonus = Math.floor(gameStreak / 3) * 5;
     gameScore += 10 + bonus;
+
     feedback.textContent = '⚡ 答對！+' + (10 + bonus);
     feedback.style.color = '#1DD1A1';
     inp.className = 'game-input correct-anim';
 
-    // ✅ NEW: play correct sound
+    // ✅ play correct sound (if enabled)
     playSfx(correctSound);
 
   } else {
@@ -833,7 +914,7 @@ function checkGame() {
     feedback.style.color = '#FF6B6B';
     inp.className = 'game-input wrong-anim';
 
-    // ✅ NEW: play wrong sound
+    // ✅ play wrong sound (if enabled)
     playSfx(wrongSound);
   }
 
@@ -855,7 +936,9 @@ async function endGameChallenge() {
   document.getElementById('goScore').textContent = gameScore;
 
   let board = (await storeGet(LB_KEY)) || [];
-  const userBest = board.filter(b => b.name === currentUser.username).reduce((max, r) => r.score > max ? r.score : max, 0);
+  const userBest = board
+    .filter(b => b.name === currentUser.username)
+    .reduce((max, r) => (r.score > max ? r.score : max), 0);
 
   if (gameScore > userBest) {
     document.getElementById('goBest').textContent = '🥳 創下個人新歷史高分！';
@@ -863,13 +946,12 @@ async function endGameChallenge() {
     document.getElementById('goBest').textContent = `你的歷史最高紀錄：${userBest} 分`;
   }
 
-  // Push score record to leaderboard storage
   board.push({
     name: currentUser.username,
     score: gameScore,
     date: new Date().toLocaleDateString()
   });
-  // Sort descending
+
   board.sort((a,b) => b.score - a.score);
   await storeSet(LB_KEY, board);
 }
@@ -895,7 +977,6 @@ async function loadLeaderboard() {
   const board = (await storeGet(LB_KEY)) || [];
   document.getElementById('lbLoading').style.display = 'none';
 
-  // Compute user summary metrics
   const myRecs = board.filter(r => r.name === (currentUser ? currentUser.username : ''));
   const myBest = myRecs.reduce((m, r) => r.score > m ? r.score : m, 0);
   const myStatsDiv = document.getElementById('myStats');
@@ -912,7 +993,6 @@ async function loadLeaderboard() {
   const tbody = document.getElementById('lbBody');
   tbody.innerHTML = '';
 
-  // Loop entries (top 20 max for clean layout)
   board.slice(0, 20).forEach((row, i) => {
     const tr = document.createElement('tr');
     if (currentUser && row.name === currentUser.username) tr.className = 'lb-me';
