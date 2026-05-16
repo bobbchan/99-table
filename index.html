@@ -487,7 +487,7 @@ function playSfx(audioEl) {
   try {
     // 用 cloneNode() 避免同一個 Audio 連續 play/reset 導致某些瀏覽器不出聲
     const snd = audioEl.cloneNode();
-    snd.volume = audioEl.volume ?? 0.4;
+    snd.volume = audioEl.volume ?? 2.0;
     snd.currentTime = 0;
 
     const p = snd.play();
