@@ -36,6 +36,14 @@
             75% { transform: translateX(-5px); }
         }
         .animate-shake { animation: shake 0.4s ease-in-out; }
+
+        /* Magic loading animation */
+        @keyframes pulse-color {
+            0% { color: #a855f7; }
+            50% { color: #ec4899; }
+            100% { color: #a855f7; }
+        }
+        .animate-magic { animation: pulse-color 1.5s infinite; }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
@@ -44,6 +52,17 @@
     <div id="custom-alert" class="fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-4 rounded-2xl shadow-2xl z-50 transition-all duration-300 opacity-0 -translate-y-10 pointer-events-none flex items-center gap-3 font-bold zh-font text-lg">
         <span id="custom-alert-icon" class="text-2xl">⚠️</span>
         <span id="custom-alert-msg">Message goes here</span>
+    </div>
+
+    <!-- ✨ Magic Theme Modal -->
+    <div id="magic-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white p-6 rounded-3xl border-4 border-purple-400 max-w-sm w-full text-center shadow-2xl animate-bounce-in">
+            <h3 id="magic-modal-title" class="text-2xl font-bold text-purple-800 mb-4 zh-font">✨ Choose a Theme!</h3>
+            <p id="magic-modal-desc" class="text-gray-600 mb-4 text-sm font-bold">What should your word problems be about?</p>
+            <input type="text" id="magic-theme-input" placeholder="e.g. Dinosaurs, Space, Cats..." class="w-full mb-4 p-3 rounded-xl border-2 border-purple-300 focus:ring-4 focus:ring-purple-200 outline-none text-center text-lg font-bold">
+            <button id="btn-start-magic" onclick="startMagicQuest()" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 rounded-xl shadow-lg transition transform hover:scale-105">Let's Go! 🚀</button>
+            <button id="btn-cancel-magic" onclick="document.getElementById('magic-modal').classList.add('hidden')" class="mt-4 text-gray-500 font-bold hover:underline">Cancel</button>
+        </div>
     </div>
 
     <!-- Main App Container -->
@@ -64,9 +83,12 @@
         <div class="p-6 flex-1 relative overflow-y-auto">
             
             <!-- 1. AUTHENTICATION VIEW -->
-            <div id="auth-view" class="max-w-md mx-auto mt-10 zh-font tracking-wide">
-                <div class="text-center mb-8">
-                    <div class="text-6xl mb-4">🦊</div>
+            <div id="auth-view" class="max-w-md mx-auto mt-6 zh-font tracking-wide">
+                <div class="text-center mb-8 flex flex-col items-center">
+                    <div class="text-6xl mb-2 cursor-pointer hover:scale-110 transition-transform" onclick="fetchFoxGreeting()" title="Click me!">🦊</div>
+                    <div class="bg-yellow-50 p-3 rounded-2xl border-2 border-yellow-300 text-sm font-bold text-yellow-800 max-w-xs shadow-sm mb-4 cursor-pointer hover:bg-yellow-100 transition-colors" onclick="fetchFoxGreeting()">
+                        <span id="fox-message">✨ Click the fox for a fun math fact!</span>
+                    </div>
                     <h2 id="auth-welcome" class="text-2xl font-bold text-gray-700">Welcome to Math World!</h2>
                 </div>
                 
@@ -89,17 +111,22 @@
             </div>
 
             <!-- 2. DASHBOARD VIEW -->
-            <div id="dashboard-view" class="hidden flex flex-col items-center justify-center h-full space-y-6 pt-10 zh-font tracking-wide">
-                <button id="btn-menu-matrix" onclick="showView('matrix-view')" class="w-64 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 border-4 border-yellow-500 font-black text-xl py-6 rounded-3xl shadow-[0_8px_0_rgb(202,138,4)] hover:shadow-[0_4px_0_rgb(202,138,4)] hover:translate-y-1 transition-all">
-                    📚 Learn Matrix
-                </button>
-                <button id="btn-menu-quest" onclick="startQuiz('basic')" class="w-64 bg-rose-400 hover:bg-rose-500 text-white border-4 border-rose-500 font-black text-xl py-6 rounded-3xl shadow-[0_8px_0_rgb(190,18,60)] hover:shadow-[0_4px_0_rgb(190,18,60)] hover:translate-y-1 transition-all">
-                    🎮 Play Quest
-                </button>
-                <button id="btn-menu-word" onclick="startQuiz('word')" class="w-64 bg-green-400 hover:bg-green-500 text-green-900 border-4 border-green-500 font-black text-xl py-6 rounded-3xl shadow-[0_8px_0_rgb(34,197,94)] hover:shadow-[0_4px_0_rgb(34,197,94)] hover:translate-y-1 transition-all">
-                    🌍 Word Problems
-                </button>
-                <button id="btn-menu-badges" onclick="showProgress()" class="w-64 bg-cyan-400 hover:bg-cyan-500 text-cyan-900 border-4 border-cyan-500 font-black text-xl py-6 rounded-3xl shadow-[0_8px_0_rgb(8,145,178)] hover:shadow-[0_4px_0_rgb(8,145,178)] hover:translate-y-1 transition-all">
+            <div id="dashboard-view" class="hidden flex flex-col items-center justify-center h-full space-y-4 pt-4 zh-font tracking-wide">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button id="btn-menu-matrix" onclick="showView('matrix-view')" class="w-64 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 border-4 border-yellow-500 font-black text-xl py-6 rounded-3xl shadow-[0_8px_0_rgb(202,138,4)] hover:shadow-[0_4px_0_rgb(202,138,4)] hover:translate-y-1 transition-all">
+                        📚 Learn Matrix
+                    </button>
+                    <button id="btn-menu-quest" onclick="startQuiz('basic')" class="w-64 bg-rose-400 hover:bg-rose-500 text-white border-4 border-rose-500 font-black text-xl py-6 rounded-3xl shadow-[0_8px_0_rgb(190,18,60)] hover:shadow-[0_4px_0_rgb(190,18,60)] hover:translate-y-1 transition-all">
+                        🎮 Play Quest
+                    </button>
+                    <button id="btn-menu-word" onclick="startQuiz('word')" class="w-64 bg-green-400 hover:bg-green-500 text-green-900 border-4 border-green-500 font-black text-xl py-6 rounded-3xl shadow-[0_8px_0_rgb(34,197,94)] hover:shadow-[0_4px_0_rgb(34,197,94)] hover:translate-y-1 transition-all">
+                        🌍 Word Problems
+                    </button>
+                    <button id="btn-menu-magic" onclick="openMagicModal()" class="w-64 bg-purple-400 hover:bg-purple-500 text-white border-4 border-purple-500 font-black text-xl py-6 rounded-3xl shadow-[0_8px_0_rgb(147,51,234)] hover:shadow-[0_4px_0_rgb(147,51,234)] hover:translate-y-1 transition-all">
+                        ✨ AI Magic Theme
+                    </button>
+                </div>
+                <button id="btn-menu-badges" onclick="showProgress()" class="w-64 mt-4 bg-cyan-400 hover:bg-cyan-500 text-cyan-900 border-4 border-cyan-500 font-black text-xl py-6 rounded-3xl shadow-[0_8px_0_rgb(8,145,178)] hover:shadow-[0_4px_0_rgb(8,145,178)] hover:translate-y-1 transition-all">
                     🏆 My Badges
                 </button>
             </div>
@@ -136,7 +163,7 @@
                 </div>
 
                 <div class="flex-1 flex flex-col items-center justify-center">
-                    <div id="quiz-question" class="text-center text-4xl md:text-6xl font-black text-gray-800 mb-10 drop-shadow-md px-4 leading-tight">? × ? =</div>
+                    <div id="quiz-question" class="text-center text-4xl md:text-6xl font-black text-gray-800 mb-10 drop-shadow-md px-4 leading-tight transition-all">? × ? =</div>
                     <div id="quiz-options" class="grid grid-cols-2 gap-4 w-full max-w-md">
                         <!-- Options generated by JS -->
                     </div>
@@ -175,14 +202,18 @@
                 btnPlay: "Let's Play! 🚀", txtNewExp: "New explorer?", linkSignup: "Sign Up here",
                 signupTitle: "Create Account", btnSignup: "Join the Adventure! ✨", 
                 txtJoined: "Already joined?", linkSignin: "Sign In",
-                menuMatrix: "📚 Learn Matrix", menuQuest: "🎮 Play Quest", menuWord: "🌍 Word Problems", menuBadges: "🏆 My Badges",
+                menuMatrix: "📚 Learn Matrix", menuQuest: "🎮 Play Quest", menuWord: "🌍 Word Problems", 
+                menuMagic: "✨ AI Magic Theme", menuBadges: "🏆 My Badges",
                 btnBack: "Back to Menu", btnHear: "🔊 Hear it", btnQuit: "Quit",
                 txtScore: "Score:", txtMastery: "🏆 Mastery Badges",
                 alertEmpty: "Fields cannot be empty!", alertMismatch: "Passwords do not match!", 
                 alertTaken: "Username already taken! Try another.", alertSuccess: "Account created successfully! You can now log in.",
                 alertInvalid: "Oops! Those details didn't match. If you're new, we'd love for you to sign up! 🌟", alertNoAccount: "Oops! Those details didn't match. If you're new, we'd love for you to sign up! 🌟",
                 wordTableOf: "Table of", wordMastered: "% Mastered", wordMasteryTag: "MASTERY",
-                hi: "Hi, ", awesome: "✅ Awesome!", oops: "❌ Oops! Hint: ", timesUp: "Time's Up!", finalScore: "Final Score:", returnMenu: "Return to Menu"
+                hi: "Hi, ", awesome: "✅ Awesome!", oops: "❌ Oops! Hint: ", timesUp: "Time's Up!", finalScore: "Final Score:", returnMenu: "Return to Menu",
+                magicTitle: "✨ Choose a Theme!", magicDesc: "What should your word problems be about?", magicPlace: "e.g. Dinosaurs, Space, Cats...", btnMagicStart: "Let's Go! 🚀", btnMagicCancel: "Cancel",
+                loadingMagic: "✨ Dreaming up a magical story...",
+                foxDefault: "✨ Click the fox for a fun math fact!"
             },
             'zh': {
                 appTitle: "🌟 九九乘法表 冒險", logout: "登出",
@@ -191,14 +222,18 @@
                 btnPlay: "開始遊戲！🚀", txtNewExp: "新探險家？", linkSignup: "按此註冊",
                 signupTitle: "建立帳號", btnSignup: "加入冒險！✨", 
                 txtJoined: "已經加入了嗎？", linkSignin: "登入",
-                menuMatrix: "📚 學習乘法表", menuQuest: "🎮 乘法挑戰", menuWord: "🌍 生活應用題", menuBadges: "🏆 我的徽章",
+                menuMatrix: "📚 學習乘法表", menuQuest: "🎮 乘法挑戰", menuWord: "🌍 生活應用題", 
+                menuMagic: "✨ AI 神奇主題", menuBadges: "🏆 我的徽章",
                 btnBack: "回到主選單", btnHear: "🔊 聽發音", btnQuit: "離開",
                 txtScore: "分數：", txtMastery: "🏆 精通徽章",
                 alertEmpty: "欄位不能為空！", alertMismatch: "密碼不匹配！", 
                 alertTaken: "帳號已被使用！請嘗試其他的。", alertSuccess: "帳號建立成功！您現在可以登入了。",
                 alertInvalid: "哎呀！資料不太對喔。如果您是新探險家，歡迎先註冊加入我們！🌟", alertNoAccount: "哎呀！資料不太對喔。如果您是新探險家，歡迎先註冊加入我們！🌟",
                 wordTableOf: "的乘法", wordMastered: "% 已精通", wordMasteryTag: "已精通",
-                hi: "你好，", awesome: "✅ 太棒了！", oops: "❌ 哎呀！提示：", timesUp: "時間到！", finalScore: "最終分數：", returnMenu: "回到主選單"
+                hi: "你好，", awesome: "✅ 太棒了！", oops: "❌ 哎呀！提示：", timesUp: "時間到！", finalScore: "最終分數：", returnMenu: "回到主選單",
+                magicTitle: "✨ 選擇一個主題！", magicDesc: "你的數學故事應該關於什麼呢？", magicPlace: "例如：恐龍、太空、貓咪...", btnMagicStart: "出發！🚀", btnMagicCancel: "取消",
+                loadingMagic: "✨ 正在想一個神奇的故事...",
+                foxDefault: "✨ 點擊狐狸聽個數學小知識！"
             }
         };
 
@@ -236,6 +271,7 @@
             document.getElementById('btn-menu-matrix').innerText = t.menuMatrix;
             document.getElementById('btn-menu-quest').innerText = t.menuQuest;
             document.getElementById('btn-menu-word').innerText = t.menuWord;
+            document.getElementById('btn-menu-magic').innerText = t.menuMagic;
             document.getElementById('btn-menu-badges').innerText = t.menuBadges;
             document.getElementById('btn-matrix-back').innerText = t.btnBack;
             document.getElementById('btn-hear-it').innerText = t.btnHear;
@@ -244,6 +280,23 @@
             document.getElementById('btn-progress-back').innerText = t.btnBack;
             document.getElementById('txt-mastery-badges').innerText = t.txtMastery;
             
+            // Magic Modal Translations
+            document.getElementById('magic-modal-title').innerText = t.magicTitle;
+            document.getElementById('magic-modal-desc').innerText = t.magicDesc;
+            document.getElementById('magic-theme-input').placeholder = t.magicPlace;
+            document.getElementById('btn-start-magic').innerText = t.btnMagicStart;
+            document.getElementById('btn-cancel-magic').innerText = t.btnMagicCancel;
+            
+            // Fox message update on language change
+            const foxMsgText = document.getElementById('fox-message').innerText;
+            if(foxMsgText.includes('✨')) {
+                // If it's the default message or loading, just translate the default text
+                document.getElementById('fox-message').innerText = t.foxDefault;
+            } else if (foxMsgText.includes('🦊')) {
+                // If there is an active AI message, fetch a new one in the correct language!
+                fetchFoxGreeting();
+            }
+
             if (currentUser) document.getElementById('current-username').innerText = `${t.hi}${currentUser}!`;
             if (!document.getElementById('progress-view').classList.contains('hidden')) renderBadges();
             
@@ -255,6 +308,12 @@
                     if (quizMode === 'word' && currentWordTemplate) {
                         const text = currentWordTemplate[currentLang].replace('{a}', currentQuestion.a).replace('{b}', currentQuestion.b);
                         document.getElementById('quiz-question').innerText = text;
+                    } else if (quizMode === 'magic') {
+                        if (isQuizPaused) {
+                            document.getElementById('quiz-question').innerText = t.loadingMagic;
+                        } else {
+                            retranslateMagicQuestion();
+                        }
                     }
                 }
             }
@@ -266,7 +325,9 @@
         let quizScore = 0;
         let quizTime = 60;
         let quizTimerInt;
-        let quizMode = 'basic'; // 'basic' or 'word'
+        let quizMode = 'basic'; // 'basic', 'word', or 'magic'
+        let magicTheme = '';
+        let isQuizPaused = false; // To stop timer while AI generates
 
         // --- 1.5 Sound Effects (Web Audio API) ---
         const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -323,6 +384,38 @@
             return str;
         }
 
+        // --- 2.5 AI Fox Mascot Logic ---
+        async function fetchFoxGreeting() {
+            const msgEl = document.getElementById('fox-message');
+            const t = i18n[currentLang];
+            
+            msgEl.innerText = t.loadingMagic;
+            msgEl.parentElement.classList.add('animate-pulse');
+
+            const apiKey = ""; // Gemini API key handled dynamically by the environment
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const langInstruction = currentLang === 'zh' ? 'Traditional Chinese (繁體中文)' : 'English';
+            const systemPrompt = `You are a friendly cartoon fox mascot for a kids' multiplication learning app. Give a very short, fun math fact or an encouraging 1-sentence message to a 7-year-old child who is about to log in and learn math. Keep it under 15 words. Language: ${langInstruction}.`;
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: "Give me a short fun math message!" }] }],
+                        systemInstruction: { parts: [{ text: systemPrompt }] }
+                    })
+                });
+                if (!response.ok) throw new Error("API Error");
+                const data = await response.json();
+                msgEl.innerText = "🦊 " + data.candidates[0].content.parts[0].text.trim();
+            } catch (err) {
+                msgEl.innerText = currentLang === 'zh' ? "🦊 數學是宇宙的魔法！準備好了嗎？" : "🦊 Math is the magic of the universe! Ready?";
+            } finally {
+                msgEl.parentElement.classList.remove('animate-pulse');
+            }
+        }
+
         // --- 3. View Management ---
         function showView(viewId) {
             const views = ['auth-view', 'dashboard-view', 'matrix-view', 'quiz-view', 'progress-view'];
@@ -369,6 +462,20 @@
         function toggleAuth() {
             document.getElementById('login-box').classList.toggle('hidden');
             document.getElementById('signup-box').classList.toggle('hidden');
+        }
+
+        function openMagicModal() {
+            document.getElementById('magic-modal').classList.remove('hidden');
+            document.getElementById('magic-theme-input').value = '';
+            document.getElementById('magic-theme-input').focus();
+        }
+
+        function startMagicQuest() {
+            const input = document.getElementById('magic-theme-input').value.trim();
+            if (!input) return showAlert(currentLang === 'zh' ? "請輸入一個主題！" : "Please enter a theme!");
+            magicTheme = input;
+            document.getElementById('magic-modal').classList.add('hidden');
+            startQuiz('magic');
         }
 
         // --- 4. Authentication Logic ---
@@ -476,45 +583,116 @@
             }
         }
 
-        // --- 6. Quiz Logic ---
-        function startQuiz(mode = 'basic') {
+        // --- 6. Quiz Logic & Gemini API ---
+        
+        async function fetchGeminiStory(a, b, theme, lang) {
+            const apiKey = "";
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+            const langInstruction = lang === 'zh' ? 'Traditional Chinese (繁體中文)' : 'English';
+            const systemPrompt = `You are a fun, encouraging math teacher for a 7-year-old child. Keep it very short (1-2 sentences max). Generate a multiplication word problem for ${a} x ${b} using the theme: ${theme}. Return ONLY the question text. Do not include the answer or any conversational filler. Language: ${langInstruction}.`;
+
+            const payload = {
+                contents: [{ parts: [{ text: `Generate a short ${a} x ${b} word problem about ${theme}.` }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] }
+            };
+
+            const maxRetries = 5;
+            let delay = 1000;
+            
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                    const data = await response.json();
+                    return data.candidates[0].content.parts[0].text.trim();
+                } catch (err) {
+                    if (i === maxRetries - 1) {
+                        return lang === 'zh' ? `（網路錯誤）這是一個關於 ${theme} 的神奇問題：${a} 乘以 ${b} 是多少？` : `(Network Error) Here is a magical question about ${theme}: What is ${a} times ${b}?`;
+                    }
+                    await new Promise(res => setTimeout(res, delay));
+                    delay *= 2; // Exponential backoff
+                }
+            }
+        }
+
+        async function retranslateMagicQuestion() {
+            isQuizPaused = true; // Pause timer while translating
+            const qEl = document.getElementById('quiz-question');
+            qEl.innerText = i18n[currentLang].loadingMagic;
+            qEl.classList.add('animate-magic');
+
+            // Call Gemini API again to get the story in the new language with the same numbers
+            const story = await fetchGeminiStory(currentQuestion.a, currentQuestion.b, magicTheme, currentLang);
+            
+            qEl.innerText = story;
+            qEl.classList.remove('animate-magic');
+            isQuizPaused = false; // Resume timer
+        }
+
+        async function startQuiz(mode = 'basic') {
             quizMode = mode;
+            isQuizPaused = false;
             showView('quiz-view');
             quizScore = 0;
             quizTime = 60;
             
             // Adjust question text size based on mode
             const qEl = document.getElementById('quiz-question');
-            if(mode === 'word') {
-                qEl.className = "text-center text-2xl md:text-4xl font-bold text-gray-800 mb-10 drop-shadow-md px-6 leading-relaxed max-w-2xl";
+            if(mode === 'word' || mode === 'magic') {
+                qEl.className = "text-center text-2xl md:text-4xl font-bold text-gray-800 mb-10 drop-shadow-md px-6 leading-relaxed max-w-2xl transition-all";
             } else {
-                qEl.className = "text-center text-6xl md:text-8xl font-black text-gray-800 mb-10 drop-shadow-md px-4 leading-tight";
+                qEl.className = "text-center text-6xl md:text-8xl font-black text-gray-800 mb-10 drop-shadow-md px-4 leading-tight transition-all";
             }
 
             updateQuizUI();
-            generateQuestion();
             
             clearInterval(quizTimerInt);
             quizTimerInt = setInterval(() => {
+                if (isQuizPaused) return; // Freeze timer while AI generates
                 quizTime--;
                 document.getElementById('quiz-timer').innerText = quizTime;
                 if(quizTime <= 0) endGame();
             }, 1000);
+
+            await generateQuestion();
         }
 
-        function generateQuestion() {
+        async function generateQuestion() {
             const a = Math.floor(Math.random() * 9) + 1;
             const b = Math.floor(Math.random() * 9) + 1;
             const answer = a * b;
+            const qEl = document.getElementById('quiz-question');
             
             currentQuestion = { a, b, answer };
             
             if (quizMode === 'word') {
                 currentWordTemplate = wordProblems[Math.floor(Math.random() * wordProblems.length)];
                 const text = currentWordTemplate[currentLang].replace('{a}', a).replace('{b}', b);
-                document.getElementById('quiz-question').innerText = text;
+                qEl.innerText = text;
+                qEl.classList.remove('animate-magic');
+            } else if (quizMode === 'magic') {
+                // Pause timer and show loading
+                isQuizPaused = true;
+                const optionsContainer = document.getElementById('quiz-options');
+                optionsContainer.innerHTML = ''; // Hide buttons while loading
+                
+                qEl.innerText = i18n[currentLang].loadingMagic;
+                qEl.classList.add('animate-magic');
+
+                // Call Gemini API
+                const story = await fetchGeminiStory(a, b, magicTheme, currentLang);
+                
+                qEl.innerText = story;
+                qEl.classList.remove('animate-magic');
+                isQuizPaused = false; // Resume timer
             } else {
-                document.getElementById('quiz-question').innerText = `${a} × ${b} =`;
+                qEl.innerText = `${a} × ${b} =`;
+                qEl.classList.remove('animate-magic');
             }
             
             // Generate options
@@ -571,7 +749,7 @@
             setTimeout(() => {
                 feedback.classList.remove('opacity-100');
                 feedback.classList.add('opacity-0');
-                if(quizTime > 0) generateQuestion();
+                if(quizTime > 0) generateQuestion(); // Wait to generate next question
             }, 1200);
         }
 
