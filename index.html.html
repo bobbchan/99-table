@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>九九乘法表 - 快樂學習</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&family=Noto+Sans+HK:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #FFF9F0; --card: #FFFFFF; --text: #2C2C54; --muted: #8395A7;
+  --purple: #667eea; --purple2: #764ba2;
+}
+body { font-family:'Nunito','Noto Sans HK',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+body::before {
+  content:'⭐ 🌟 ✨ 💫 ⭐ 🌟 ✨ 💫 ⭐ 🌟';
+  position:fixed; top:0; left:0; width:100%; height:100%;
+  font-size:40px; opacity:0.05; pointer-events:none;
+  display:flex; flex-wrap:wrap; align-content:space-around;
+  justify-content:space-around; z-index:0; letter-spacing:60px; line-height:120px;
+}
+.container { max-width:1100px; margin:0 auto; padding:0 20px; position:relative; z-index:1; }
+
+/* ===== AUTH SCREEN ===== */
+#authScreen { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; position:relative; z-index:10; }
+.auth-wrap { width:100%; max-width:440px; }
+.auth-logo { text-align:center; margin-bottom:28px; }
+.auth-logo .logo-emoji { font-size:3.5rem; display:block; margin-bottom:8px; }
+.auth-logo h1 { font-size:2.6rem; font-weight:900; letter-spacing:4px; color:var(--text); }
+.auth-logo p { color:var(--muted); margin-top:6px; font-size:0.95rem; }
+.auth-card { background:white; border-radius:28px; box-shadow:0 12px 50px rgba(0,0,0,0.13); overflow:hidden; }
+.auth-tabs { display:flex; border-bottom:2px solid #F0F0F0; }
+.auth-tab {
+  flex:1; padding:18px; font-size:1rem; font-weight:700;
+  background:none; border:none; cursor:pointer; color:var(--muted);
+  font-family:'Nunito',sans-serif; transition:all 0.2s;
+  border-bottom:3px solid transparent; margin-bottom:-2px;
+}
+.auth-tab.active { color:var(--purple); border-bottom-color:var(--purple); }
+.auth-panel { display:none; padding:32px; }
+.auth-panel.active { display:block; }
+.auth-field { margin-bottom:18px; }
+.auth-field label { display:block; font-size:0.88rem; font-weight:700; color:var(--muted); margin-bottom:7px; letter-spacing:0.5px; }
+.auth-input {
+  width:100%; padding:13px 15px; border:2.5px solid #EEE;
+  border-radius:13px; font-size:1rem; font-weight:600;
+  font-family:'Nunito',sans-serif; color:var(--text);
+  transition:border-color 0.2s; outline:none; background:#FAFAFA;
+}
+.auth-input:focus { border-color:var(--purple); background:white; }
+.auth-err { background:#FDECEA; color:#c0392b; border-radius:11px; padding:10px 14px; font-size:0.88rem; font-weight:600; margin-bottom:15px; display:none; }
+.auth-err.show { display:block; }
+.auth-ok  { background:#D5F5E3; color:#0A7A5A; border-radius:11px; padding:10px 14px; font-size:0.88rem; font-weight:600; margin-bottom:15px; display:none; }
+.auth-ok.show  { display:block; }
+.auth-btn {
+  width:100%; padding:15px; border:none; border-radius:15px;
+  font-size:1.05rem; font-weight:900; cursor:pointer;
+  font-family:'Nunito',sans-serif; color:white;
+  background:linear-gradient(135deg,#667eea,#764ba2);
+  transition:all 0.2s; letter-spacing:1px;
+}
+.auth-btn:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(102,126,234,0.4); }
+.auth-btn.loading { opacity:0.7; pointer-events:none; }
+.auth-hint { text-align:center; margin-top:14px; font-size:0.83rem; color:var(--muted); }
+.pw-strength { height:4px; border-radius:4px; background:#EEE; margin-top:7px; overflow:hidden; }
+.pw-bar { height:100%; border-radius:4px; width:0%; transition:all 0.3s; }
+
+/* ===== MAIN APP ===== */
+#mainApp { display:none; }
+header {
+  background:linear-gradient(135deg,#667eea 0%,#764ba2 50%,#f64f59 100%);
+  padding:20px 20px; position:relative; overflow:hidden;
+}
+header::before {
+  content:''; position:absolute; inset:0;
+  background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%23ffffff' fill-opacity='0.08'%3E%3Ccircle cx='30' cy='30' r='8'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+.hdr { position:relative; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+.hdr-title h1 { font-size:clamp(1.3rem,4vw,2.2rem); font-weight:900; color:white; text-shadow:2px 2px 0 rgba(0,0,0,0.2); letter-spacing:3px; }
+.hdr-title p { color:rgba(255,255,255,0.82); font-size:0.87rem; margin-top:3px; }
+.hdr-user { display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.18); border-radius:50px; padding:8px 14px; }
+.hdr-avatar { width:34px; height:34px; border-radius:50%; background:rgba(255,255,255,0.3); display:flex; align-items:center; justify-content:center; font-size:1rem; font-weight:900; color:white; }
+.hdr-name { color:white; font-weight:700; font-size:0.92rem; }
+.logout-btn { background:rgba(255,255,255,0.25); border:none; border-radius:50px; color:white; padding:4px 12px; font-size:0.78rem; font-weight:700; cursor:pointer; font-family:'Nunito',sans-serif; transition:background 0.2s; }
+.logout-btn:hover { background:rgba(255,255,255,0.4); }
+
+/* TABS */
+.tabs { display:flex; gap:10px; justify-content:center; padding:18px 20px 0; flex-wrap:wrap; }
+.tab { background:white; border:3px solid transparent; border-radius:50px; padding:9px 18px; font-size:0.92rem; font-weight:700; cursor:pointer; transition:all 0.2s; font-family:'Nunito',sans-serif; color:var(--text); box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+.tab:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,0.14); }
+.tab.active { color:white; border-color:transparent; transform:translateY(-2px); }
+.tab[data-tab="table"].active  { background:linear-gradient(135deg,#667eea,#764ba2); }
+.tab[data-tab="quiz"].active   { background:linear-gradient(135deg,#f64f59,#c0392b); }
+.tab[data-tab="game"].active   { background:linear-gradient(135deg,#1DD1A1,#10ac84); }
+.tab[data-tab="board"].active  { background:linear-gradient(135deg,#FF9F43,#EE5A24); }
+.section { display:none; padding:22px 0 40px; }
+.section.active { display:block; }
+
+/* TABLE */
+.selector-title { text-align:center; font-size:1.05rem; font-weight:700; color:var(--muted); margin-bottom:14px; letter-spacing:2px; }
+.number-selector { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom:22px; }
+.num-btn { width:52px; height:52px; border:3px solid; border-radius:14px; font-size:1.3rem; font-weight:900; cursor:pointer; transition:all 0.2s; font-family:'Nunito',sans-serif; background:white; }
+.num-btn:hover { transform:scale(1.1) rotate(-5deg); }
+.num-btn.active { color:white!important; transform:scale(1.15); box-shadow:0 6px 20px rgba(0,0,0,0.22); }
+.times-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:12px; }
+.times-card { background:white; border-radius:14px; padding:14px 18px; display:flex; align-items:center; box-shadow:0 2px 12px rgba(0,0,0,0.07); border-left:6px solid; transition:all 0.25s; cursor:pointer; animation:popIn 0.3s ease both; }
+@keyframes popIn { from{opacity:0;transform:scale(0.85) translateY(10px)} to{opacity:1;transform:scale(1) translateY(0)} }
+.times-card:hover { transform:translateX(6px) scale(1.02); box-shadow:0 6px 24px rgba(0,0,0,0.13); }
+.times-card .equation { font-size:1.4rem; font-weight:700; flex:1; }
+.times-card .answer { font-size:1.7rem; font-weight:900; width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:white; }
+.times-card.hidden-answer .answer { background:#E8E8E8!important; color:#E8E8E8; transition:color 0.3s; }
+.times-card.hidden-answer:hover .answer { color:white; }
+.view-toggle { display:flex; justify-content:center; gap:10px; margin-bottom:16px; }
+.vtog { background:white; border:2px solid #DDD; border-radius:50px; padding:7px 17px; cursor:pointer; font-weight:600; font-family:'Nunito',sans-serif; font-size:0.88rem; transition:all 0.2s; color:var(--text); }
+.vtog.active { background:var(--text); color:white; border-color:var(--text); }
+.full-table-wrap { overflow-x:auto; }
+.full-table { width:100%; border-collapse:collapse; min-width:540px; }
+.full-table th,.full-table td { padding:8px 5px; text-align:center; font-size:0.8rem; font-weight:600; border:1px solid #EEE; }
+.full-table th { color:white; font-size:0.92rem; font-weight:900; }
+.full-table td { background:white; color:var(--text); }
+.full-table td:hover { position:relative; z-index:1; box-shadow:0 0 0 3px gold; }
+.full-table .diag { background:#2C2C54!important; color:white!important; font-weight:900; }
+
+/* QUIZ */
+.quiz-setup { text-align:center; padding:16px 0; }
+.quiz-setup h2 { font-size:1.6rem; font-weight:900; margin-bottom:16px; }
+.range-select { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom:20px; }
+.range-btn { background:white; border:3px solid #DDD; border-radius:12px; padding:10px 16px; font-size:0.92rem; font-weight:700; cursor:pointer; transition:all 0.2s; font-family:'Nunito',sans-serif; color:var(--text); }
+.range-btn.active { background:linear-gradient(135deg,#f64f59,#c0392b); color:white; border-color:transparent; transform:translateY(-3px); box-shadow:0 6px 20px rgba(246,79,89,0.38); }
+.quiz-card { background:white; border-radius:24px; padding:34px 26px; text-align:center; max-width:460px; margin:0 auto; box-shadow:0 8px 40px rgba(0,0,0,0.11); }
+.quiz-question { font-size:2.7rem; font-weight:900; margin-bottom:8px; line-height:1.2; }
+.quiz-hint { color:var(--muted); font-size:0.88rem; margin-bottom:22px; }
+.quiz-choices { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
+.choice-btn { background:#F8F9FA; border:3px solid #EEE; border-radius:13px; padding:14px; font-size:1.5rem; font-weight:900; cursor:pointer; transition:all 0.2s; font-family:'Nunito',sans-serif; color:var(--text); }
+.choice-btn:hover { background:#EEF; border-color:#667eea; transform:scale(1.04); }
+.choice-btn.correct { background:#D5F5E3; border-color:#1DD1A1; color:#0A7A5A; animation:bounce 0.4s; }
+.choice-btn.wrong   { background:#FDECEA; border-color:#FF6B6B; color:#C0392B; animation:shake 0.4s; }
+@keyframes bounce { 0%,100%{transform:scale(1)} 50%{transform:scale(1.12)} }
+@keyframes shake  { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+.feedback { font-size:1.7rem; min-height:54px; font-weight:900; display:flex; align-items:center; justify-content:center; gap:10px; }
+.score-bar { display:flex; align-items:center; gap:12px; background:#F8F9FA; border-radius:50px; padding:10px 18px; max-width:360px; margin:0 auto 20px; }
+.score-label { font-size:0.85rem; color:var(--muted); white-space:nowrap; }
+.score-track { flex:1; height:10px; background:#EEE; border-radius:50px; overflow:hidden; }
+.score-fill { height:100%; background:linear-gradient(90deg,#1DD1A1,#667eea); border-radius:50px; transition:width 0.5s; }
+.score-num { font-weight:900; font-size:0.92rem; white-space:nowrap; }
+.quiz-result { background:white; border-radius:24px; padding:34px; text-align:center; max-width:460px; margin:0 auto; box-shadow:0 8px 40px rgba(0,0,0,0.11); }
+.result-emoji { font-size:3.6rem; margin-bottom:13px; }
+.result-title { font-size:1.8rem; font-weight:900; margin-bottom:8px; }
+.result-score { font-size:1.05rem; color:var(--muted); margin-bottom:20px; }
+.result-detail { font-size:1.2rem; font-weight:700; color:#667eea; margin-bottom:20px; }
+.progress-dots { display:flex; gap:6px; justify-content:center; margin-bottom:16px; flex-wrap:wrap; }
+.dot { width:12px; height:12px; border-radius:50%; background:#EEE; transition:background 0.3s; }
+.dot.done { background:#1DD1A1; }
+.dot.wrong-dot { background:#FF6B6B; }
+
+/* BUTTONS */
+.btn { background:linear-gradient(135deg,#667eea,#764ba2); color:white; border:none; border-radius:50px; padding:12px 30px; font-size:0.98rem; font-weight:700; cursor:pointer; transition:all 0.2s; font-family:'Nunito',sans-serif; }
+.btn:hover { transform:translateY(-2px); box-shadow:0 8px 22px rgba(102,126,234,0.35); }
+.btn.red   { background:linear-gradient(135deg,#f64f59,#c0392b); }
+.btn.green { background:linear-gradient(135deg,#1DD1A1,#10ac84); }
+.btn.gray  { background:linear-gradient(135deg,#8395A7,#636e72); }
+.btn-row { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+
+/* GAME */
+.game-header { display:flex; gap:13px; justify-content:center; flex-wrap:wrap; margin-bottom:20px; }
+.game-stat { background:white; border-radius:13px; padding:11px 20px; text-align:center; box-shadow:0 2px 12px rgba(0,0,0,0.08); min-width:105px; }
+.game-stat-val { font-size:1.8rem; font-weight:900; }
+.game-stat-label { font-size:0.76rem; color:var(--muted); font-weight:600; }
+.timer-val { color:#f64f59; } .score-val { color:#667eea; } .streak-val { color:#FF9F43; }
+.game-arena { background:white; border-radius:24px; padding:30px 20px; text-align:center; max-width:500px; margin:0 auto; box-shadow:0 8px 40px rgba(0,0,0,0.11); }
+.game-question { font-size:3rem; font-weight:900; margin-bottom:6px; }
+.game-sub { font-size:0.92rem; color:var(--muted); margin-bottom:22px; }
+.game-input-row { display:flex; gap:12px; justify-content:center; align-items:center; margin-bottom:16px; }
+.game-input { width:108px; height:64px; font-size:2.2rem; font-weight:900; text-align:center; border:4px solid #DDD; border-radius:16px; font-family:'Nunito',sans-serif; color:var(--text); transition:border-color 0.2s; outline:none; }
+.game-input:focus { border-color:#667eea; }
+.game-input.correct-anim { border-color:#1DD1A1; background:#D5F5E3; animation:bounce 0.4s; }
+.game-input.wrong-anim   { border-color:#FF6B6B; background:#FDECEA; animation:shake 0.4s; }
+.game-submit { background:linear-gradient(135deg,#667eea,#764ba2); color:white; border:none; border-radius:13px; padding:0 24px; height:64px; font-size:1.15rem; font-weight:700; cursor:pointer; transition:all 0.2s; font-family:'Nunito',sans-serif; }
+.game-submit:hover { transform:scale(1.05); }
+.game-feedback { font-size:1.35rem; font-weight:900; min-height:46px; }
+
+/* OVERLAY */
+.overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.62); z-index:100; align-items:center; justify-content:center; }
+.overlay.show { display:flex; }
+.overlay-box { background:white; border-radius:26px; padding:42px 34px; text-align:center; max-width:390px; width:92%; box-shadow:0 20px 60px rgba(0,0,0,0.28); animation:popIn 0.4s ease; }
+.go-emoji  { font-size:4.2rem; margin-bottom:16px; }
+.go-title  { font-size:1.9rem; font-weight:900; margin-bottom:8px; }
+.go-score  { font-size:1.1rem; color:var(--muted); margin-bottom:6px; }
+.go-best   { font-size:0.92rem; color:#667eea; font-weight:700; margin-bottom:24px; }
+
+/* LEADERBOARD */
+.my-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:11px; margin-bottom:20px; }
+.stat-card { background:white; border-radius:14px; padding:14px; text-align:center; box-shadow:0 2px 12px rgba(0,0,0,0.07); }
+.stat-val { font-size:1.9rem; font-weight:900; color:#667eea; }
+.stat-lbl { font-size:0.76rem; color:var(--muted); font-weight:600; margin-top:3px; }
+.lb-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:12px; }
+.lb-title { font-size:1.45rem; font-weight:900; }
+.lb-clear { background:none; border:2px solid #FF6B6B; color:#FF6B6B; border-radius:50px; padding:6px 15px; font-size:0.85rem; font-weight:700; cursor:pointer; font-family:'Nunito',sans-serif; transition:all 0.2s; }
+.lb-clear:hover { background:#FF6B6B; color:white; }
+.lb-card { background:white; border-radius:18px; box-shadow:0 4px 20px rgba(0,0,0,0.08); overflow:hidden; }
+.lb-table { width:100%; border-collapse:collapse; }
+.lb-table th { background:#2C2C54; color:white; padding:11px 13px; text-align:left; font-size:0.87rem; }
+.lb-table th:last-child { text-align:right; }
+.lb-table td { padding:10px 13px; border-bottom:1px solid #EEE; font-size:0.92rem; vertical-align:middle; }
+.lb-table td:last-child { text-align:right; font-weight:900; font-size:1.02rem; }
+.lb-table tr:nth-child(even) td { background:#F8F9FA; }
+.lb-table tr:hover td { background:#EEF2FF; }
+.lb-me td { background:#EEF2FF!important; }
+.lb-me td:first-child { border-left:4px solid #667eea; }
+.lb-rank { font-weight:900; font-size:1.1rem; width:30px; display:inline-block; text-align:center; }
+.gold { color:#FFD700; } .silver { color:#C0C0C0; } .bronze { color:#CD7F32; }
+.lb-loading,.lb-empty { text-align:center; padding:42px; color:var(--muted); font-size:1rem; }
+.lb-date { font-size:0.76rem; color:var(--muted); }
+.me-badge { background:#667eea; color:white; font-size:0.7rem; padding:2px 7px; border-radius:20px; font-weight:700; vertical-align:middle; margin-left:5px; }
+
+@media(max-width:600px){
+  .quiz-question{font-size:2rem;} .game-question{font-size:2.3rem;}
+  .times-grid{grid-template-columns:1fr;}
+  .full-table th,.full-table td{padding:5px 3px;font-size:0.7rem;}
+  .auth-panel{padding:22px 18px;}
+}
+</style>
+</head>
+<body>
+
+<div id="authScreen">
+  <div class="auth-wrap">
+    <div class="auth-logo">
+      <span class="logo-emoji">🎓</span>
+      <h1>九九乘法表</h1>
+      <p>快樂學習 · 輕鬆記憶 · 數學高手</p>
+    </div>
+    <div class="auth-card">
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tabSignin" onclick="switchAuthTab('signin')">🔑 登入</button>
+        <button class="auth-tab"        id="tabSignup" onclick="switchAuthTab('signup')">✏️ 注冊</button>
+      </div>
+
+      <div class="auth-panel active" id="panelSignin">
+        <div class="auth-err" id="siErr"></div>
+        <div class="auth-field">
+          <label>用戶名稱</label>
+          <input class="auth-input" id="siUser" type="text" placeholder="輸入用戶名稱" autocomplete="username">
+        </div>
+        <div class="auth-field">
+          <label>密碼</label>
+          <input class="auth-input" id="siPass" type="password" placeholder="輸入密碼" autocomplete="current-password">
+        </div>
+        <button class="auth-btn" id="siBtn" onclick="doSignIn()">登入 →</button>
+        <p class="auth-hint">還沒有帳號？點擊上方「注冊」</p>
+      </div>
+
+      <div class="auth-panel" id="panelSignup">
+        <div class="auth-err" id="suErr"></div>
+        <div class="auth-ok"  id="suOk"></div>
+        <div class="auth-field">
+          <label>用戶名稱（2–12個字符）</label>
+          <input class="auth-input" id="suUser" type="text" placeholder="例如：小明、Peter123" maxlength="12" autocomplete="username">
+        </div>
+        <div class="auth-field">
+          <label>密碼（至少4個字符）</label>
+          <input class="auth-input" id="suPass" type="password" placeholder="設定密碼" maxlength="20" autocomplete="new-password" oninput="updatePwBar()">
+          <div class="pw-strength"><div class="pw-bar" id="pwBar"></div></div>
+        </div>
+        <div class="auth-field">
+          <label>確認密碼</label>
+          <input class="auth-input" id="suPass2" type="password" placeholder="再輸入一次密碼" maxlength="20" autocomplete="new-password">
+        </div>
+        <button class="auth-btn" id="suBtn" onclick="doSignUp()">注冊帳號 ✓</button>
+        <p class="auth-hint">已有帳號？點擊上方「登入」</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="mainApp">
+  <header>
+    <div class="container hdr">
+      <div class="hdr-title">
+        <h1>🎓 九九乘法表</h1>
+        <p>快樂學習 · 輕鬆記憶 · 數學高手</p>
+      </div>
+      <div class="hdr-user">
+        <div class="hdr-avatar" id="hdrAvatar">?</div>
+        <span class="hdr-name" id="hdrName">學生</span>
+        <button class="logout-btn" onclick="doLogout()">登出</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="tabs">
+      <button class="tab active" data-tab="table">📖 乘法表</button>
+      <button class="tab" data-tab="quiz">✏️ 測驗</button>
+      <button class="tab" data-tab="game">🎮 計時挑戰</button>
+      <button class="tab" data-tab="board">🏅 排行榜</button>
+    </div>
+
+    <div class="section active" id="sec-table">
+      <div class="selector-title">選擇段數</div>
+      <div class="number-selector" id="numSelector"></div>
+      <div class="view-toggle">
+        <button class="vtog active" data-view="cards">🃏 卡片</button>
+        <button class="vtog" data-view="hide">🙈 蓋住答案</button>
+        <button class="vtog" data-view="full">📊 完整表格</button>
+      </div>
+      <div id="cardsView"><div class="times-grid" id="timesGrid"></div></div>
+      <div id="fullView" style="display:none" class="full-table-wrap">
+        <table class="full-table" id="fullTable"></table>
+      </div>
+    </div>
+
+    <div class="section" id="sec-quiz">
+      <div id="quizSetup" class="quiz-setup">
+        <h2>🎯 選擇挑戰範圍</h2>
+        <div class="range-select">
+          <button class="range-btn active" data-min="1" data-max="3">1–3 段</button>
+          <button class="range-btn" data-min="1" data-max="6">1–6 段</button>
+          <button class="range-btn" data-min="1" data-max="9">全部 1–9 段</button>
+          <button class="range-btn" data-min="4" data-max="9">4–9 段</button>
+        </div>
+        <button class="btn red" onclick="startQuiz()">開始測驗！ 🚀</button>
+      </div>
+      <div id="quizPlay" style="display:none">
+        <div class="score-bar">
+          <span class="score-label">得分</span>
+          <div class="score-track"><div class="score-fill" id="qScoreFill" style="width:0%"></div></div>
+          <span class="score-num" id="qScoreNum">0 / 10</span>
+        </div>
+        <div class="progress-dots" id="progressDots"></div>
+        <div class="quiz-card">
+          <div class="quiz-question" id="quizQ">?</div>
+          <div class="quiz-hint" id="quizHint">請選擇正確答案</div>
+          <div class="quiz-choices" id="quizChoices"></div>
+          <div class="feedback" id="quizFeedback"></div>
+        </div>
+      </div>
+      <div id="quizResult" style="display:none" class="quiz-result">
+        <div class="result-emoji" id="resEmoji"></div>
+        <div class="result-title" id="resTitle"></div>
+        <div class="result-score" id="resScore"></div>
+        <div class="result-detail" id="resDetail"></div>
+        <button class="btn" onclick="backToSetup()">再試一次 🔄</button>
+      </div>
+    </div>
+
+    <div class="section" id="sec-game">
+      <div id="gameSetup" style="text-align:center;padding:20px 0">
+        <h2 style="font-size:1.65rem;font-weight:900;margin-bottom:12px">🎮 計時挑戰</h2>
+        <p style="color:var(--muted);margin-bottom:20px">60秒內答對盡量多條！連續答對有加分！</p>
+        <button class="btn green" onclick="startGame()">開始！ ⚡</button>
+      </div>
+      <div id="gamePlay" style="display:none">
+        <div class="game-header">
+          <div class="game-stat"><div class="game-stat-val timer-val" id="gameTimer">60</div><div class="game-stat-label">⏱ 秒</div></div>
+          <div class="game-stat"><div class="game-stat-val score-val" id="gameScore">0</div><div class="game-stat-label">🏆 分數</div></div>
+          <div class="game-stat"><div class="game-stat-val streak-val" id="gameStreak">0</div><div class="game-stat-label">🔥 連續</div></div>
+        </div>
+        <div class="game-arena">
+          <div class="game-question" id="gameQ">? × ? = ?</div>
+          <div class="game-sub">輸入答案然後按 Enter</div>
+          <div class="game-input-row">
+            <input class="game-input" type="number" id="gameInput" placeholder="?" min="1" max="81" autocomplete="off">
+            <button class="game-submit" onclick="checkGame()">✓</button>
+          </div>
+          <div class="game-feedback" id="gameFeedback"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" id="sec-board">
+      <div class="my-stats" id="myStats"></div>
+      <div class="lb-hdr">
+        <div class="lb-title">🏅 全班排行榜</div>
+        <button class="lb-clear" onclick="clearBoard()">清除全部</button>
+      </div>
+      <div class="lb-card">
+        <div class="lb-loading" id="lbLoading">⏳ 載入中…</div>
+        <table class="lb-table" id="lbTable" style="display:none">
+          <thead><tr><th>名次</th><th>姓名</th><th>日期</th><th>得分 🏆</th></tr></thead>
+          <tbody id="lbBody"></tbody>
+        </table>
+        <div class="lb-empty" id="lbEmpty" style="display:none">還沒有紀錄，快去計時挑戰吧！🚀</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="gameOver">
+  <div class="overlay-box">
+    <div class="go-emoji" id="goEmoji">🏆</div>
+    <div class="go-title">時間到！</div>
+    <div class="go-score">你的得分：<strong id="goScore">0</strong></div>
+    <div class="go-best" id="goBest"></div>
+    <div class="btn-row">
+      <button class="btn green" onclick="doRestart()">再玩一次 🔄</button>
+      <button class="btn gray"  onclick="doQuit()">不玩了 👋</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONSTANTS & VARIABLES
+// ============================================================
+const COLORS = ['#FF6B6B','#FF9F43','#FECA57','#54A0FF','#FF9FF3','#667eea','#5F27CD','#1DD1A1','#EE5A24'];
+const ACCOUNTS_KEY = 'accounts-v2';
+const LB_KEY       = 'leaderboard-v2';
+const TOTAL_Q      = 10;
+let currentUser    = null;
+
+// Mock window.storage in case it's not provided by the context environment
+if (!window.storage) {
+  window.storage = {
+    get: async (key) => ({ value: localStorage.getItem(key) }),
+    set: async (key, val) => localStorage.setItem(key, val),
+    delete: async (key) => localStorage.removeItem(key)
+  };
+}
+
+// ============================================================
+// STORAGE HELPERS
+// ============================================================
+async function storeGet(key, shared=false) {
+  try { const r = await window.storage.get(key, shared); return r && r.value ? JSON.parse(r.value) : null; }
+  catch(e) { return null; }
+}
+async function storeSet(key, val, shared=false) {
+  try { await window.storage.set(key, JSON.stringify(val), shared); } catch(e) {}
+}
+async function storeDel(key, shared=false) {
+  try { await window.storage.delete(key, shared); } catch(e) {}
+}
+
+// ============================================================
+// AUTH
+// ============================================================
+function simpleHash(s) {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h) ^ s.charCodeAt(i);
+  return (h >>> 0).toString(16);
+}
+
+function switchAuthTab(tab) {
+  const isSignin = tab === 'signin';
+  document.getElementById('tabSignin').classList.toggle('active', isSignin);
+  document.getElementById('tabSignup').classList.toggle('active', !isSignin);
+  document.getElementById('panelSignin').classList.toggle('active', isSignin);
+  document.getElementById('panelSignup').classList.toggle('active', !isSignin);
+  ['siErr','suErr','suOk'].forEach(id => document.getElementById(id).classList.remove('show'));
+}
+
+function showErr(id, msg) { const el=document.getElementById(id); el.textContent=msg; el.classList.add('show'); }
+function hideMsg(id) { document.getElementById(id).classList.remove('show'); }
+
+function updatePwBar() {
+  const pw = document.getElementById('suPass').value;
+  const bar = document.getElementById('pwBar');
+  let strength = 0;
+  if (pw.length >= 4) strength = 1;
+  if (pw.length >= 7) strength = 2;
+  if (pw.length >= 10 || /[^a-zA-Z0-9]/.test(pw)) strength = 3;
+  bar.style.width  = pw.length === 0 ? '0%' : ['33%','66%','100%'][strength-1] || '5%';
+  bar.style.background = ['#FF6B6B','#FF9F43','#1DD1A1'][strength-1] || '#EEE';
+}
+
+async function doSignIn() {
+  hideMsg('siErr');
+  const user = document.getElementById('siUser').value.trim();
+  const pass = document.getElementById('siPass').value;
+  if (!user || !pass) { showErr('siErr','請填寫用戶名稱和密碼。'); return; }
+  const btn = document.getElementById('siBtn');
+  btn.textContent = '登入中…'; btn.classList.add('loading');
+  const accs = (await storeGet(ACCOUNTS_KEY, true)) || {};
+  btn.textContent = '登入 →'; btn.classList.remove('loading');
+  const key = user.toLowerCase();
+  if (!accs[key]) { showErr('siErr','找不到此用戶，請先注冊。'); return; }
+  if (accs[key].hash !== simpleHash(pass)) { showErr('siErr','密碼錯誤，請重試。'); return; }
+  currentUser = { username: accs[key].display };
+  enterApp();
+}
+
+async function doSignUp() {
+  hideMsg('suErr'); hideMsg('suOk');
+  const user  = document.getElementById('suUser').value.trim();
+  const pass  = document.getElementById('suPass').value;
+  const pass2 = document.getElementById('suPass2').value;
+  if (!user || user.length < 2) { showErr('suErr','用戶名稱至少需要2個字符。'); return; }
+  if (pass.length < 4)           { showErr('suErr','密碼至少需要4個字符。'); return; }
+  if (pass !== pass2)            { showErr('suErr','兩次密碼不一樣，請重新輸入。'); return; }
+  const btn = document.getElementById('suBtn');
+  btn.textContent = '注冊中…'; btn.classList.add('loading');
+  const accs = (await storeGet(ACCOUNTS_KEY, true)) || {};
+  btn.textContent = '注冊帳號 ✓'; btn.classList.remove('loading');
+  const key = user.toLowerCase();
+  if (accs[key]) { showErr('suErr','此用戶名稱已被使用，請換一個。'); return; }
+  accs[key] = { hash: simpleHash(pass), display: user, createdAt: new Date().toISOString() };
+  await storeSet(ACCOUNTS_KEY, accs, true);
+  document.getElementById('suOk').textContent = `✅ 注冊成功！歡迎 ${user}，請登入。`;
+  document.getElementById('suOk').classList.add('show');
+  ['suUser','suPass','suPass2'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('pwBar').style.width = '0%';
+  setTimeout(() => switchAuthTab('signin'), 1500);
+}
+
+function enterApp() {
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'block';
+  const name = currentUser.username;
+  document.getElementById('hdrName').textContent = name;
+  document.getElementById('hdrAvatar').textContent = [...name][0].toUpperCase();
+  buildNumSelector(); 
+  renderCards();
+  buildFullTable();
+  loadLeaderboard();
+}
+
+function doLogout() {
+  if (!confirm('確定要登出嗎？')) return;
+  clearInterval(gameInterval);
+  currentUser = null;
+  document.getElementById('mainApp').style.display = 'none';
+  document.getElementById('authScreen').style.display = 'flex';
+  document.getElementById('siUser').value = '';
+  document.getElementById('siPass').value = '';
+  hideMsg('siErr');
+  switchAuthTab('signin');
+  document.getElementById('gameSetup').style.display = 'block';
+  document.getElementById('gamePlay').style.display = 'none';
+  document.getElementById('gameOver').classList.remove('show');
+  
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===0));
+  document.querySelectorAll('.section').forEach((s,i)=>s.classList.toggle('active',i===0));
+}
+
+// APP TABS SYSTEM
+document.querySelectorAll('.tab').forEach(button => {
+  button.addEventListener('click', () => {
+    const tabName = button.getAttribute('data-tab');
+    document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    
+    button.classList.add('active');
+    document.getElementById(`sec-${tabName}`).classList.add('active');
+    if (tabName === 'board') loadLeaderboard();
+  });
+});
+
+// Bind Enter keys on auth inputs
+['siUser','siPass'].forEach(id => document.getElementById(id).addEventListener('keydown',e=>{ if(e.key==='Enter') doSignIn(); }));
+['suUser','suPass','suPass2'].forEach(id => document.getElementById(id).addEventListener('keydown',e=>{ if(e.key==='Enter') doSignUp(); }));
+
+// ============================================================
+// TABLE SECTION LOGIC
+// ============================================================
+let currentNum = 2, currentView = 'cards';
+
+function buildNumSelector() {
+  const sel = document.getElementById('numSelector'); sel.innerHTML = '';
+  for (let i=1; i<=9; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'num-btn' + (i===2?' active':'');
+    btn.textContent = i; btn.style.borderColor = COLORS[i-1];
+    btn.style.color = i===2?'white':COLORS[i-1];
+    btn.style.background = i===2?COLORS[i-1]:'white';
+    btn.onclick = () => {
+      currentNum = i;
+      document.querySelectorAll('.num-btn').forEach((b,j)=>{ b.classList.remove('active'); b.style.background='white'; b.style.color=COLORS[j]; });
+      btn.classList.add('active'); btn.style.background=COLORS[i-1]; btn.style.color='white';
+      renderCards();
+    };
+    sel.appendChild(btn);
+  }
+}
+
+function renderCards() {
+  const grid = document.getElementById('timesGrid'); grid.innerHTML = '';
+  const color = COLORS[currentNum-1];
+  for (let j=1; j<=9; j++) {
+    const card = document.createElement('div');
+    card.className = 'times-card' + (currentView==='hide'?' hidden-answer':'');
+    card.style.borderLeftColor = color;
+    card.innerHTML = `
+      <div class="equation">${currentNum} × ${j} =</div>
+      <div class="answer" style="background:${color}">${currentNum * j}</div>
+    `;
+    grid.appendChild(card);
+  }
+}
+
+function buildFullTable() {
+  const table = document.getElementById('fullTable');
+  let html = '<thead><tr style="background:#2C2C54"><th>×</th>';
+  for(let i=1; i<=9; i++) html += `<th>${i}</th>`;
+  html += '</tr></thead><tbody>';
+  for(let i=1; i<=9; i++) {
+    html += `<tr><th style="background:#2C2C54;color:white;font-weight:900">${i}</th>`;
+    for(let j=1; j<=9; j++) {
+      const isDiag = i === j ? ' class="diag"' : '';
+      html += `<td${isDiag}>${i*j}</td>`;
+    }
+    html += '</tr>';
+  }
+  html += '</tbody>';
+  table.innerHTML = html;
+}
+
+// View switches (Cards / Hide Answer / Full Grid)
+document.querySelectorAll('.vtog').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.vtog').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentView = btn.getAttribute('data-view');
+    
+    if (currentView === 'full') {
+      document.getElementById('cardsView').style.display = 'none';
+      document.getElementById('fullView').style.display = 'block';
+    } else {
+      document.getElementById('cardsView').style.display = 'block';
+      document.getElementById('fullView').style.display = 'none';
+      renderCards();
+    }
+  });
+});
+
+// ============================================================
+// QUIZ SECTION LOGIC
+// ============================================================
+let quizMin = 1, quizMax = 3, quizQuestions = [], quizIndex = 0, quizScore = 0;
+
+document.querySelectorAll('.range-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    quizMin = parseInt(btn.getAttribute('data-min'));
+    quizMax = parseInt(btn.getAttribute('data-max'));
+  });
+});
+
+function startQuiz() {
+  document.getElementById('quizSetup').style.display = 'none';
+  document.getElementById('quizPlay').style.display = 'block';
+  document.getElementById('quizResult').style.display = 'none';
+  quizQuestions = [];
+  quizScore = 0;
+  quizIndex = 0;
+  
+  // Create 10 unique questions pool within specified range
+  while(quizQuestions.length < TOTAL_Q) {
+    const a = Math.floor(Math.random() * (quizMax - quizMin + 1)) + quizMin;
+    const b = Math.floor(Math.random() * 9) + 1;
+    if(!quizQuestions.some(q => q.a === a && q.b === b)) {
+      quizQuestions.push({ a, b, ans: a * b });
+    }
+  }
+  
+  const dotsContainer = document.getElementById('progressDots');
+  dotsContainer.innerHTML = '';
+  for(let i=0; i<TOTAL_Q; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'dot';
+    dotsContainer.appendChild(dot);
+  }
+  
+  showQuizQuestion();
+}
+
+function showQuizQuestion() {
+  document.getElementById('quizFeedback').textContent = '';
+  document.getElementById('qScoreNum').textContent = `${quizScore} / ${TOTAL_Q}`;
+  document.getElementById('qScoreFill').style.width = `${(quizIndex / TOTAL_Q) * 100}%`;
+  
+  const q = quizQuestions[quizIndex];
+  document.getElementById('quizQ').textContent = `${q.a} × ${q.b} = ?`;
+  
+  // Choices generator (1 correct, 3 distractors)
+  let choices = [q.ans];
+  while(choices.length < 4) {
+    const offset = (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random() * 5) + 1);
+    const fake = q.ans + offset;
+    if(fake > 0 && !choices.includes(fake)) choices.push(fake);
+  }
+  choices.sort(() => Math.random() - 0.5);
+  
+  const choicesDiv = document.getElementById('quizChoices');
+  choicesDiv.innerHTML = '';
+  choices.forEach(val => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.textContent = val;
+    btn.onclick = () => checkQuiz(btn, val);
+    choicesDiv.appendChild(btn);
+  });
+}
+
+function checkQuiz(selectedBtn, val) {
+  const q = quizQuestions[quizIndex];
+  const buttons = document.querySelectorAll('.choice-btn');
+  buttons.forEach(b => b.style.pointerEvents = 'none'); // block extra clicks
+  
+  const dots = document.querySelectorAll('.progressDots .dot, #progressDots .dot');
+  
+  if (val === q.ans) {
+    selectedBtn.classList.add('correct');
+    document.getElementById('quizFeedback').innerHTML = '🎉 太棒了！答對了！';
+    dots[quizIndex].classList.add('done');
+    quizScore++;
+  } else {
+    selectedBtn.classList.add('wrong');
+    document.getElementById('quizFeedback').innerHTML = `😢 答錯囉！ 答案是 <strong>${q.ans}</strong>`;
+    dots[quizIndex].classList.add('wrong-dot');
+    buttons.forEach(b => { if(parseInt(b.textContent) === q.ans) b.classList.add('correct'); });
+  }
+  
+  quizIndex++;
+  setTimeout(() => {
+    if(quizIndex < TOTAL_Q) {
+      showQuizQuestion();
+    } else {
+      showQuizEnd();
+    }
+  }, 1800);
+}
+
+function showQuizEnd() {
+  document.getElementById('quizPlay').style.display = 'none';
+  document.getElementById('quizResult').style.display = 'block';
+  
+  document.getElementById('resScore').textContent = `最終得分：${quizScore} / ${TOTAL_Q}`;
+  const emoji = document.getElementById('resEmoji');
+  const title = document.getElementById('resTitle');
+  const detail = document.getElementById('resDetail');
+  
+  if(quizScore === TOTAL_Q) {
+    emoji.textContent = '👑'; title.textContent = '完美大師！'; detail.textContent = '你是百分百的乘法超人！✨';
+  } else if(quizScore >= 7) {
+    emoji.textContent = '🌟'; title.textContent = '好厲害！'; detail.textContent = '實力非常深厚，再接再厲就完美了！💪';
+  } else {
+    emoji.textContent = '📚'; title.textContent = '加油加油！'; detail.textContent = '多看看乘法表卡片，下次一定會更好！';
+  }
+}
+
+function backToSetup() {
+  document.getElementById('quizResult').style.display = 'none';
+  document.getElementById('quizSetup').style.display = 'block';
+}
+
+// ============================================================
+// GAME (TIME ATTACK CHALLENGE) LOGIC
+// ============================================================
+let gameTimer = 60, gameScore = 0, gameStreak = 0, gameInterval = null, gameCurrentQ = {};
+
+function startGame() {
+  document.getElementById('gameSetup').style.display = 'none';
+  document.getElementById('gamePlay').style.display = 'block';
+  gameTimer = 60; gameScore = 0; gameStreak = 0;
+  document.getElementById('gameTimer').textContent = gameTimer;
+  document.getElementById('gameScore').textContent = gameScore;
+  document.getElementById('gameStreak').textContent = gameStreak;
+  document.getElementById('gameFeedback').textContent = '';
+  
+  const inp = document.getElementById('gameInput');
+  inp.value = ''; inp.focus();
+  
+  nextGameQuestion();
+  clearInterval(gameInterval);
+  gameInterval = setInterval(() => {
+    gameTimer--;
+    document.getElementById('gameTimer').textContent = gameTimer;
+    if(gameTimer <= 0) {
+      clearInterval(gameInterval);
+      endGameChallenge();
+    }
+  }, 1000);
+}
+
+function nextGameQuestion() {
+  const a = Math.floor(Math.random() * 9) + 1;
+  const b = Math.floor(Math.random() * 9) + 1;
+  gameCurrentQ = { a, b, ans: a * b };
+  document.getElementById('gameQ').textContent = `${a} × ${b} = ?`;
+}
+
+function checkGame() {
+  const inp = document.getElementById('gameInput');
+  const userAns = parseInt(inp.value);
+  if (isNaN(userAns)) return;
+  
+  const feedback = document.getElementById('gameFeedback');
+  if(userAns === gameCurrentQ.ans) {
+    gameStreak++;
+    // Normal score 10 + Streak dynamic bonuses
+    const bonus = Math.floor(gameStreak / 3) * 5;
+    gameScore += 10 + bonus;
+    feedback.textContent = '⚡ 答對！+' + (10 + bonus);
+    feedback.style.color = '#1DD1A1';
+    inp.className = 'game-input correct-anim';
+  } else {
+    gameStreak = 0;
+    feedback.textContent = `❌ 答錯了！答案是 ${gameCurrentQ.ans}`;
+    feedback.style.color = '#FF6B6B';
+    inp.className = 'game-input wrong-anim';
+  }
+  
+  document.getElementById('gameScore').textContent = gameScore;
+  document.getElementById('gameStreak').textContent = gameStreak;
+  
+  setTimeout(() => {
+    inp.className = 'game-input';
+    inp.value = '';
+    inp.focus();
+    if (gameTimer > 0) nextGameQuestion();
+  }, 600);
+}
+
+document.getElementById('gameInput').addEventListener('keydown', e => { if(e.key==='Enter') checkGame(); });
+
+async function endGameChallenge() {
+  document.getElementById('gameOver').classList.add('show');
+  document.getElementById('goScore').textContent = gameScore;
+  
+  let board = (await storeGet(LB_KEY)) || [];
+  const userBest = board.filter(b => b.name === currentUser.username).reduce((max, r) => r.score > max ? r.score : max, 0);
+  
+  if (gameScore > userBest) {
+    document.getElementById('goBest').textContent = '🥳 創下個人新歷史高分！';
+  } else {
+    document.getElementById('goBest').textContent = `你的歷史最高紀錄：${userBest} 分`;
+  }
+  
+  // Push score record to leaderboard storage
+  board.push({
+    name: currentUser.username,
+    score: gameScore,
+    date: new Date().toLocaleDateString()
+  });
+  // Sort descending
+  board.sort((a,b) => b.score - a.score);
+  await storeSet(LB_KEY, board);
+}
+
+function doRestart() {
+  document.getElementById('gameOver').classList.remove('show');
+  startGame();
+}
+function doQuit() {
+  document.getElementById('gameOver').classList.remove('show');
+  document.getElementById('gamePlay').style.display = 'none';
+  document.getElementById('gameSetup').style.display = 'block';
+}
+
+// ============================================================
+// LEADERBOARD SECTION LOGIC
+// ============================================================
+async function loadLeaderboard() {
+  document.getElementById('lbLoading').style.display = 'block';
+  document.getElementById('lbTable').style.display = 'none';
+  document.getElementById('lbEmpty').style.display = 'none';
+  
+  const board = (await storeGet(LB_KEY)) || [];
+  document.getElementById('lbLoading').style.display = 'none';
+  
+  // Compute user summary metrics
+  const myRecs = board.filter(r => r.name === (currentUser ? currentUser.username : ''));
+  const myBest = myRecs.reduce((m, r) => r.score > m ? r.score : m, 0);
+  const myStatsDiv = document.getElementById('myStats');
+  myStatsDiv.innerHTML = `
+    <div class="stat-card"><div class="stat-val">${myRecs.length}</div><div class="stat-lbl">挑戰次數</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:#1DD1A1">${myBest}</div><div class="stat-lbl">最高得分</div></div>
+  `;
+  
+  if(board.length === 0) {
+    document.getElementById('lbEmpty').style.display = 'block';
+    return;
+  }
+  
+  const tbody = document.getElementById('lbBody');
+  tbody.innerHTML = '';
+  
+  // Loop entries (top 20 max for clean layout)
+  board.slice(0, 20).forEach((row, i) => {
+    const tr = document.createElement('tr');
+    if (currentUser && row.name === currentUser.username) tr.className = 'lb-me';
+    
+    let medal = i + 1;
+    if(i === 0) medal = '<span class="lb-rank gold">🥇</span>';
+    else if(i === 1) medal = '<span class="lb-rank silver">🥈</span>';
+    else if(i === 2) medal = '<span class="lb-rank bronze">🥉</span>';
+    else medal = `<span class="lb-rank">${medal}</span>`;
+    
+    const meBadge = (currentUser && row.name === currentUser.username) ? '<span class="me-badge">我</span>' : '';
+    
+    tr.innerHTML = `
+      <td>${medal}</td>
+      <td><strong>${row.name}</strong>${meBadge}</td>
+      <td class="lb-date">${row.date}</td>
+      <td>${row.score}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  
+  document.getElementById('lbTable').style.display = 'table';
+}
+
+async function clearBoard() {
+  if(!confirm('確定要清除全班所有的挑戰計時排行榜紀錄嗎？數據清除後無法復原！')) return;
+  await storeDel(LB_KEY);
+  loadLeaderboard();
+}
+</script>
+</body>
+</html>
