@@ -481,24 +481,94 @@ correctSound.volume = 0.4;
 wrongSound.volume = 0.4;
 
 // ✅ safe sound play helper (checks toggle)
-function playSfx(audioEl) {
-  if (!sfxEnabled) return;
+function playSfx(audioEl) // ============================================================
+// ✅ SFX (音效) 開關 + 解鎖播放修復
+// ============================================================
+const SFX_KEY = 'sfx-enabled-v1';
+let sfxEnabled = true;
 
+// ✅ unlock flag (fixes "no sound" due to browser policy)
+let audioUnlocked = false;
+
+function clampVol(v) {
+  v = Number(v);
+  if (!Number.isFinite(v)) return 0.4;
+  return Math.max(0, Math.min(1, v));
+}
+
+function updateSfxButtonUI() {
+  const btn = document.getElementById('sfxBtn');
+  if (!btn) return;
+  if (sfxEnabled) {
+    btn.textContent = '🔊音效：開';
+    btn.classList.remove('off');
+  } else {
+    btn.textContent = '🔇音效：關';
+    btn.classList.add('off');
+  }
+}
+
+function unlockAudio() {
+  // Try to unlock by playing+pausing a tiny moment
   try {
-    // 用 cloneNode() 避免同一個 Audio 連續 play/reset 導致某些瀏覽器不出聲
-    const snd = audioEl.cloneNode();
-    snd.volume = audioEl.volume ?? 2.0;
-    snd.currentTime = 0;
+    if (!sfxEnabled || audioUnlocked) return;
 
-    const p = snd.play();
-    if (p && typeof p.catch === 'function') {
-      p.catch(() => {
-        // 如果仍被瀏覽器拒絕播放，可到這裡排查（例如：網頁未經手勢播放）
+    const testAud = correctSound; // use one of them
+    if (!testAud) return;
+
+    testAud.volume = clampVol(testAud.volume);
+    testAud.currentTime = 0;
+
+    const p = testAud.play();
+    if (p && typeof p.then === 'function') {
+      p.then(() => {
+        testAud.pause();
+        audioUnlocked = true;
+      }).catch(() => {
+        // still blocked; will try again next gesture
       });
+    } else {
+      // older browsers fallback
+      testAud.pause();
+      audioUnlocked = true;
     }
   } catch (e) {
     // ignore
   }
+}
+
+function loadSfxSetting() {
+  try {
+    const v = localStorage.getItem(SFX_KEY);
+    sfxEnabled = (v !== '0');
+  } catch (e) {
+    sfxEnabled = true;
+  }
+  updateSfxButtonUI();
+}
+
+function toggleSfx() {
+  sfxEnabled = !sfxEnabled;
+  try { localStorage.setItem(SFX_KEY, sfxEnabled ? '1' : '0'); } catch (e) {}
+
+  updateSfxButtonUI();
+
+  // ✅ if turning ON, attempt unlock immediately on this user click
+  if (sfxEnabled) unlockAudio();
+}
+
+// ✅ safe sound play helper (checks toggle + unlock)
+function playSfx(audioEl) {
+  if (!sfxEnabled) return;
+  if (!audioUnlocked) return; // important: ensures browser allows playing
+
+  try {
+    const snd = audioEl.cloneNode();
+    snd.volume = clampVol(snd.volume ?? 0.4);
+    snd.currentTime = 0;
+    const p = snd.play();
+    if (p && typeof p.catch === 'function') p.catch(() => {});
+  } catch (e) {}
 }
 
 // ============================================================
