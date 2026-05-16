@@ -418,6 +418,23 @@ if (!window.storage) {
   };
 }
 
+const correctSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-84.wav');
+const wrongSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2003/2003-84.wav');
+
+// Optional: Adjust volume so it's not too loud (0.0 to 1.0)
+correctSound.volume = 0.4;
+wrongSound.volume = 0.4;
+
+// ✅ NEW: safe sound play helper
+function playSfx(audioEl) {
+  try {
+    audioEl.currentTime = 0; // replay from beginning
+    audioEl.play();
+  } catch (e) {
+    // ignore if browser blocks autoplay
+  }
+}
+
 // ============================================================
 // STORAGE HELPERS
 // ============================================================
@@ -528,7 +545,7 @@ function doLogout() {
   document.getElementById('gameSetup').style.display = 'block';
   document.getElementById('gamePlay').style.display = 'none';
   document.getElementById('gameOver').classList.remove('show');
-  
+
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===0));
   document.querySelectorAll('.section').forEach((s,i)=>s.classList.toggle('active',i===0));
 }
@@ -539,7 +556,7 @@ document.querySelectorAll('.tab').forEach(button => {
     const tabName = button.getAttribute('data-tab');
     document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-    
+
     button.classList.add('active');
     document.getElementById(`sec-${tabName}`).classList.add('active');
     if (tabName === 'board') loadLeaderboard();
@@ -611,7 +628,7 @@ document.querySelectorAll('.vtog').forEach(btn => {
     document.querySelectorAll('.vtog').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     currentView = btn.getAttribute('data-view');
-    
+
     if (currentView === 'full') {
       document.getElementById('cardsView').style.display = 'none';
       document.getElementById('fullView').style.display = 'block';
@@ -644,7 +661,7 @@ function startQuiz() {
   quizQuestions = [];
   quizScore = 0;
   quizIndex = 0;
-  
+
   // Create 10 unique questions pool within specified range
   while(quizQuestions.length < TOTAL_Q) {
     const a = Math.floor(Math.random() * (quizMax - quizMin + 1)) + quizMin;
@@ -653,7 +670,7 @@ function startQuiz() {
       quizQuestions.push({ a, b, ans: a * b });
     }
   }
-  
+
   const dotsContainer = document.getElementById('progressDots');
   dotsContainer.innerHTML = '';
   for(let i=0; i<TOTAL_Q; i++) {
@@ -661,7 +678,7 @@ function startQuiz() {
     dot.className = 'dot';
     dotsContainer.appendChild(dot);
   }
-  
+
   showQuizQuestion();
 }
 
@@ -669,10 +686,10 @@ function showQuizQuestion() {
   document.getElementById('quizFeedback').textContent = '';
   document.getElementById('qScoreNum').textContent = `${quizScore} / ${TOTAL_Q}`;
   document.getElementById('qScoreFill').style.width = `${(quizIndex / TOTAL_Q) * 100}%`;
-  
+
   const q = quizQuestions[quizIndex];
   document.getElementById('quizQ').textContent = `${q.a} × ${q.b} = ?`;
-  
+
   // Choices generator (1 correct, 3 distractors)
   let choices = [q.ans];
   while(choices.length < 4) {
@@ -681,7 +698,7 @@ function showQuizQuestion() {
     if(fake > 0 && !choices.includes(fake)) choices.push(fake);
   }
   choices.sort(() => Math.random() - 0.5);
-  
+
   const choicesDiv = document.getElementById('quizChoices');
   choicesDiv.innerHTML = '';
   choices.forEach(val => {
@@ -697,21 +714,31 @@ function checkQuiz(selectedBtn, val) {
   const q = quizQuestions[quizIndex];
   const buttons = document.querySelectorAll('.choice-btn');
   buttons.forEach(b => b.style.pointerEvents = 'none'); // block extra clicks
-  
+
   const dots = document.querySelectorAll('.progressDots .dot, #progressDots .dot');
-  
+
   if (val === q.ans) {
     selectedBtn.classList.add('correct');
     document.getElementById('quizFeedback').innerHTML = '🎉 太棒了！答對了！';
     dots[quizIndex].classList.add('done');
     quizScore++;
+
+    // ✅ NEW: play correct sound
+    playSfx(correctSound);
+
   } else {
     selectedBtn.classList.add('wrong');
     document.getElementById('quizFeedback').innerHTML = `😢 答錯囉！ 答案是 <strong>${q.ans}</strong>`;
     dots[quizIndex].classList.add('wrong-dot');
-    buttons.forEach(b => { if(parseInt(b.textContent) === q.ans) b.classList.add('correct'); });
+
+    buttons.forEach(b => { 
+      if(parseInt(b.textContent) === q.ans) b.classList.add('correct'); 
+    });
+
+    // ✅ NEW: play wrong sound
+    playSfx(wrongSound);
   }
-  
+
   quizIndex++;
   setTimeout(() => {
     if(quizIndex < TOTAL_Q) {
@@ -725,12 +752,12 @@ function checkQuiz(selectedBtn, val) {
 function showQuizEnd() {
   document.getElementById('quizPlay').style.display = 'none';
   document.getElementById('quizResult').style.display = 'block';
-  
+
   document.getElementById('resScore').textContent = `最終得分：${quizScore} / ${TOTAL_Q}`;
   const emoji = document.getElementById('resEmoji');
   const title = document.getElementById('resTitle');
   const detail = document.getElementById('resDetail');
-  
+
   if(quizScore === TOTAL_Q) {
     emoji.textContent = '👑'; title.textContent = '完美大師！'; detail.textContent = '你是百分百的乘法超人！✨';
   } else if(quizScore >= 7) {
@@ -758,10 +785,10 @@ function startGame() {
   document.getElementById('gameScore').textContent = gameScore;
   document.getElementById('gameStreak').textContent = gameStreak;
   document.getElementById('gameFeedback').textContent = '';
-  
+
   const inp = document.getElementById('gameInput');
   inp.value = ''; inp.focus();
-  
+
   nextGameQuestion();
   clearInterval(gameInterval);
   gameInterval = setInterval(() => {
@@ -785,8 +812,9 @@ function checkGame() {
   const inp = document.getElementById('gameInput');
   const userAns = parseInt(inp.value);
   if (isNaN(userAns)) return;
-  
+
   const feedback = document.getElementById('gameFeedback');
+
   if(userAns === gameCurrentQ.ans) {
     gameStreak++;
     // Normal score 10 + Streak dynamic bonuses
@@ -795,16 +823,23 @@ function checkGame() {
     feedback.textContent = '⚡ 答對！+' + (10 + bonus);
     feedback.style.color = '#1DD1A1';
     inp.className = 'game-input correct-anim';
+
+    // ✅ NEW: play correct sound
+    playSfx(correctSound);
+
   } else {
     gameStreak = 0;
     feedback.textContent = `❌ 答錯了！答案是 ${gameCurrentQ.ans}`;
     feedback.style.color = '#FF6B6B';
     inp.className = 'game-input wrong-anim';
+
+    // ✅ NEW: play wrong sound
+    playSfx(wrongSound);
   }
-  
+
   document.getElementById('gameScore').textContent = gameScore;
   document.getElementById('gameStreak').textContent = gameStreak;
-  
+
   setTimeout(() => {
     inp.className = 'game-input';
     inp.value = '';
@@ -818,16 +853,16 @@ document.getElementById('gameInput').addEventListener('keydown', e => { if(e.key
 async function endGameChallenge() {
   document.getElementById('gameOver').classList.add('show');
   document.getElementById('goScore').textContent = gameScore;
-  
+
   let board = (await storeGet(LB_KEY)) || [];
   const userBest = board.filter(b => b.name === currentUser.username).reduce((max, r) => r.score > max ? r.score : max, 0);
-  
+
   if (gameScore > userBest) {
     document.getElementById('goBest').textContent = '🥳 創下個人新歷史高分！';
   } else {
     document.getElementById('goBest').textContent = `你的歷史最高紀錄：${userBest} 分`;
   }
-  
+
   // Push score record to leaderboard storage
   board.push({
     name: currentUser.username,
@@ -856,10 +891,10 @@ async function loadLeaderboard() {
   document.getElementById('lbLoading').style.display = 'block';
   document.getElementById('lbTable').style.display = 'none';
   document.getElementById('lbEmpty').style.display = 'none';
-  
+
   const board = (await storeGet(LB_KEY)) || [];
   document.getElementById('lbLoading').style.display = 'none';
-  
+
   // Compute user summary metrics
   const myRecs = board.filter(r => r.name === (currentUser ? currentUser.username : ''));
   const myBest = myRecs.reduce((m, r) => r.score > m ? r.score : m, 0);
@@ -868,28 +903,28 @@ async function loadLeaderboard() {
     <div class="stat-card"><div class="stat-val">${myRecs.length}</div><div class="stat-lbl">挑戰次數</div></div>
     <div class="stat-card"><div class="stat-val" style="color:#1DD1A1">${myBest}</div><div class="stat-lbl">最高得分</div></div>
   `;
-  
+
   if(board.length === 0) {
     document.getElementById('lbEmpty').style.display = 'block';
     return;
   }
-  
+
   const tbody = document.getElementById('lbBody');
   tbody.innerHTML = '';
-  
+
   // Loop entries (top 20 max for clean layout)
   board.slice(0, 20).forEach((row, i) => {
     const tr = document.createElement('tr');
     if (currentUser && row.name === currentUser.username) tr.className = 'lb-me';
-    
+
     let medal = i + 1;
     if(i === 0) medal = '<span class="lb-rank gold">🥇</span>';
     else if(i === 1) medal = '<span class="lb-rank silver">🥈</span>';
     else if(i === 2) medal = '<span class="lb-rank bronze">🥉</span>';
     else medal = `<span class="lb-rank">${medal}</span>`;
-    
+
     const meBadge = (currentUser && row.name === currentUser.username) ? '<span class="me-badge">我</span>' : '';
-    
+
     tr.innerHTML = `
       <td>${medal}</td>
       <td><strong>${row.name}</strong>${meBadge}</td>
@@ -898,7 +933,7 @@ async function loadLeaderboard() {
     `;
     tbody.appendChild(tr);
   });
-  
+
   document.getElementById('lbTable').style.display = 'table';
 }
 
