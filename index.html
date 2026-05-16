@@ -483,11 +483,21 @@ wrongSound.volume = 0.4;
 // ✅ safe sound play helper (checks toggle)
 function playSfx(audioEl) {
   if (!sfxEnabled) return;
+
   try {
-    audioEl.currentTime = 0;
-    audioEl.play();
+    // 用 cloneNode() 避免同一個 Audio 連續 play/reset 導致某些瀏覽器不出聲
+    const snd = audioEl.cloneNode();
+    snd.volume = audioEl.volume ?? 0.4;
+    snd.currentTime = 0;
+
+    const p = snd.play();
+    if (p && typeof p.catch === 'function') {
+      p.catch(() => {
+        // 如果仍被瀏覽器拒絕播放，可到這裡排查（例如：網頁未經手勢播放）
+      });
+    }
   } catch (e) {
-    // ignore (browser may block autoplay)
+    // ignore
   }
 }
 
